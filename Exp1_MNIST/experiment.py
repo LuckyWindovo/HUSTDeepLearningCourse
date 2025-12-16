@@ -5,12 +5,22 @@ from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 import sys
 import os
-
-project_root = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, project_root)
+import json
 
 from models.mlp import DebugMLP
 from utils.viz import plot_training_history, plot_weights_distribution
+
+# 配置参数
+EXPERIMENT_DIR = 'Exp1_MNIST'
+CONFIG = {
+    'batch_size': 64,
+    'epochs': 10,
+    'learning_rate': 0.01,
+    'hidden_sizes': [128, 64],
+    'activation': 'relu',
+    'data_dir': f'{EXPERIMENT_DIR}/data',           
+    'results_dir': f'{EXPERIMENT_DIR}/results'     
+}
 
 def load_data(batch_size=64, data_dir='./data'):
     """加载并预处理 MNIST 数据集"""
@@ -188,27 +198,18 @@ def train_and_evaluate(model, train_loader, test_loader, epochs=10, lr=0.01,
 
 def run_experiment():
     """运行完整实验"""
-    # 配置参数
-    CONFIG = {
-        'batch_size': 64,
-        'epochs': 10,
-        'learning_rate': 0.01,
-        'hidden_sizes': [128, 64],
-        'activation': 'relu',
-        'data_dir': './data',
-        'results_dir': './results'
-    }
-    
+    config = CONFIG
+
     # 打印配置
     print("实验配置:")
-    for key, value in CONFIG.items():
+    for key, value in config.items():
         print(f"  {key}: {value}")
     
     # 加载数据
     print("\n加载数据集...")
     train_loader, test_loader = load_data(
-        batch_size=CONFIG['batch_size'], 
-        data_dir=CONFIG['data_dir']
+        batch_size=config['batch_size'], 
+        data_dir=config['data_dir']
     )
     print(f"训练集大小: {len(train_loader.dataset)}")
     print(f"测试集大小: {len(test_loader.dataset)}")
@@ -219,9 +220,9 @@ def run_experiment():
     print("\n初始化模型...")
     model = DebugMLP(
         input_size=784,
-        hidden_sizes=CONFIG['hidden_sizes'],
+        hidden_sizes=config['hidden_sizes'],
         num_classes=10,
-        activation=CONFIG['activation']
+        activation=config['activation']
     )
     print(f"模型结构:\n{model}")
     
@@ -236,32 +237,32 @@ def run_experiment():
         model=model,
         train_loader=train_loader,
         test_loader=test_loader,
-        epochs=CONFIG['epochs'],
-        lr=CONFIG['learning_rate'],
+        epochs=config['epochs'],
+        lr=config['learning_rate'],
         debug_first_batch=True,
-        save_dir=CONFIG['results_dir']
+        save_dir=config['results_dir']
     )
     
     # 可视化结果
     print("\n生成可视化图表...")
     plot_training_history(
         history,
-        save_path=os.path.join(CONFIG['results_dir'], 'training_curves.png'),
+        save_path=os.path.join(config['results_dir'], 'training_curves.png'),
         show_plot=True
     )
     
     # 保存最终权重分布
     plot_weights_distribution(
         model,
-        save_path=os.path.join(CONFIG['results_dir'], 'weights_final.png')
+        save_path=os.path.join(config['results_dir'], 'weights_final.png')
     )
     
     # 保存训练历史
     import json
-    with open(os.path.join(CONFIG['results_dir'], 'training_history.json'), 'w') as f:
+    with open(os.path.join(config['results_dir'], 'training_history.json'), 'w') as f:
         json.dump(history, f, indent=2)
     
-    print(f"\n所有结果已保存到: {CONFIG['results_dir']}")
+    print(f"\n所有结果已保存到: {config['results_dir']}")
     
     model.eval()
     with torch.no_grad():
