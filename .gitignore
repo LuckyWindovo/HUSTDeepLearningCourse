@@ -1,0 +1,12 @@
+# 数据集和结果
+Exp1_MNIST/data/
+Exp1_MNIST/results/
+
+
+
+__pycache__/
+*.pyc
+.vscode/
+*.code-workspace
+.DS_Store
+Thumbs.db
