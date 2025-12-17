@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 class DebugMLP(nn.Module):
     """可调试的多层感知机模型"""
-    def __init__(self, input_size=784, hidden_sizes=[128, 64], num_classes=10, activation='sigmoid'):
+    def __init__(self, input_size=784, hidden_sizes=[128, 64], num_classes=10, activation='relu'):
         super(DebugMLP, self).__init__()
         
         self.activation_name = activation

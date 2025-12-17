@@ -196,10 +196,12 @@ def train_and_evaluate(model, train_loader, test_loader, epochs=10, lr=0.01,
     
     return history, device
 
-def run_experiment():
+def run_experiment(config=None):
     """运行完整实验"""
-    config = CONFIG
-
+    # 如果没有传入配置，使用默认CONFIG
+    if config is None:
+        config = CONFIG
+    
     # 打印配置
     print("实验配置:")
     for key, value in config.items():
