@@ -2,7 +2,7 @@
 Exp1_MNIST/data/
 Exp1_MNIST/results/
 Exp1_MNIST/results_*/
-
+*.pdf
 
 
 __pycache__/
