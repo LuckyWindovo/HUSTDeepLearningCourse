@@ -11,3 +11,9 @@ __pycache__/
 *.code-workspace
 .DS_Store
 Thumbs.db
+
+Exp2_CIFAR10/data/
+Exp2_CIFAR10/results/
+Exp2_CIFAR10/models/
+Exp2_CIFAR10/logs/
+*.pdf
