@@ -2,54 +2,71 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
+import seaborn as sns
 from vae_basic import VAEBasic
 from cvae_advanced import CVAEAdvanced
 from train_vae import MNISTDataLoader
 import os
 
-plt.rcParams['font.sans-serif'] = ['SimHei']  
-plt.rcParams['axes.unicode_minus'] = False   
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei']
+plt.rcParams['axes.unicode_minus'] = False
+sns.set_palette("husl")   
 
 def plot_training_curves():
     """绘制训练损失曲线"""
     print("加载训练记录并绘制损失曲线...")
     
-    # 加载训练记录
     train_losses = np.load('results/logs/train_losses.npy')
     train_recon_losses = np.load('results/logs/train_recon_losses.npy')
     train_kl_losses = np.load('results/logs/train_kl_losses.npy')
     test_recon_losses = np.load('results/logs/test_recon_losses.npy')
     
-    # 创建图表
-    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+    fig, axes = plt.subplots(2, 2, figsize=(16, 12))
+    fig.suptitle('VAE模型训练过程分析', fontsize=18, fontweight='bold', y=0.98)
     
-    # 图1：训练损失
     epochs = range(1, len(train_losses) + 1)
-    axes[0].plot(epochs, train_losses, label='总损失', linewidth=2)
-    axes[0].plot(epochs, train_recon_losses, label='重构损失', linewidth=2)
-    axes[0].plot(epochs, train_kl_losses, label='KL散度', linewidth=2)
-    axes[0].set_xlabel('训练轮数', fontsize=12)
-    axes[0].set_ylabel('损失值', fontsize=12)
-    axes[0].set_title('训练集损失变化', fontsize=14, fontweight='bold')
-    axes[0].legend(fontsize=10)
-    axes[0].grid(True, alpha=0.3)
     
-    # 图2：测试集重构损失
-    axes[1].plot(epochs, test_recon_losses, label='测试集重构损失', 
-                 color='red', linewidth=2, marker='o', markersize=3)
-    axes[1].set_xlabel('训练轮数', fontsize=12)
-    axes[1].set_ylabel('损失值', fontsize=12)
-    axes[1].set_title('测试集重构损失变化', fontsize=14, fontweight='bold')
-    axes[1].legend(fontsize=10)
-    axes[1].grid(True, alpha=0.3)
+    axes[0, 0].plot(epochs, train_losses, linewidth=2.5, color='#2E86AB', label='总损失')
+    axes[0, 0].fill_between(epochs, train_losses, alpha=0.2, color='#2E86AB')
+    axes[0, 0].set_xlabel('训练轮数', fontsize=12, fontweight='bold')
+    axes[0, 0].set_ylabel('损失值', fontsize=12, fontweight='bold')
+    axes[0, 0].set_title('总损失变化趋势', fontsize=14, fontweight='bold', pad=15)
+    axes[0, 0].legend(loc='upper right', fontsize=10)
+    axes[0, 0].grid(True, alpha=0.3, linestyle='--')
+
+    axes[0, 1].plot(epochs, train_recon_losses, linewidth=2.5, color='#A23B72', label='训练集重构损失')
+    axes[0, 1].plot(epochs, test_recon_losses, linewidth=2.5, color='#F18F01', label='测试集重构损失', linestyle='--')
+    axes[0, 1].set_xlabel('训练轮数', fontsize=12, fontweight='bold')
+    axes[0, 1].set_ylabel('损失值', fontsize=12, fontweight='bold')
+    axes[0, 1].set_title('重构损失对比', fontsize=14, fontweight='bold', pad=15)
+    axes[0, 1].legend(loc='upper right', fontsize=10)
+    axes[0, 1].grid(True, alpha=0.3, linestyle='--')
+
+
+    axes[1, 0].plot(epochs, train_kl_losses, linewidth=2.5, color='#C73E1D', label='KL散度')
+    axes[1, 0].fill_between(epochs, train_kl_losses, alpha=0.2, color='#C73E1D')
+    axes[1, 0].set_xlabel('训练轮数', fontsize=12, fontweight='bold')
+    axes[1, 0].set_ylabel('损失值', fontsize=12, fontweight='bold')
+    axes[1, 0].set_title('KL散度变化趋势', fontsize=14, fontweight='bold', pad=15)
+    axes[1, 0].legend(loc='upper right', fontsize=10)
+    axes[1, 0].grid(True, alpha=0.3, linestyle='--')
+    
+  
+    axes[1, 1].plot(epochs, train_recon_losses, linewidth=2.5, color='#A23B72', label='重构损失')
+    axes[1, 1].plot(epochs, train_kl_losses, linewidth=2.5, color='#C73E1D', label='KL散度')
+    axes[1, 1].plot(epochs, train_losses, linewidth=3, color='#2E86AB', label='总损失', alpha=0.7)
+    axes[1, 1].set_xlabel('训练轮数', fontsize=12, fontweight='bold')
+    axes[1, 1].set_ylabel('损失值', fontsize=12, fontweight='bold')
+    axes[1, 1].set_title('损失分量分解', fontsize=14, fontweight='bold', pad=15)
+    axes[1, 1].legend(loc='upper right', fontsize=10)
+    axes[1, 1].grid(True, alpha=0.3, linestyle='--')
     
     plt.tight_layout()
-    plt.savefig('results/images/training_curves.png', dpi=300, bbox_inches='tight')
+    plt.savefig('results/images/training_curves.png', dpi=300, bbox_inches='tight', facecolor='white')
     plt.show()
-    print("损失曲线已保存至 results/images/training_curves.png")
+    print("✓ 损失曲线已保存至 results/images/training_curves.png")
 
-def evaluate_reconstruction(model, device, target_digit=0, num_samples=5):
-    """评估重构能力"""
+def evaluate_reconstruction(model, device, target_digit=0, num_samples=6):
     print(f"\n评估数字{target_digit}的重构能力...")
     
     # 加载测试数据
@@ -73,59 +90,78 @@ def evaluate_reconstruction(model, device, target_digit=0, num_samples=5):
         original = test_data.view(-1, 28, 28).cpu().numpy()
         reconstructed = recon.view(-1, 28, 28).cpu().numpy()
         
+        # 计算MSE（用于显示）
+        mse = np.mean((original - reconstructed) ** 2, axis=(1, 2))
+        
         # 可视化对比
-        fig, axes = plt.subplots(2, num_samples, figsize=(12, 5))
+        fig, axes = plt.subplots(3, num_samples, figsize=(16, 10))
+        fig.suptitle(f'VAE重构效果深度分析 (数字{target_digit})', 
+                     fontsize=16, fontweight='bold', y=0.98)
+        
         for i in range(num_samples):
-            # 原始图像
             axes[0, i].imshow(original[i], cmap='gray')
-            axes[0, i].set_title(f'原始图像', fontsize=11)
+            axes[0, i].set_title(f'原始图像 #{i+1}', fontsize=11, fontweight='bold', pad=5)
             axes[0, i].axis('off')
             
-            # 重构图像
             axes[1, i].imshow(reconstructed[i], cmap='gray')
-            axes[1, i].set_title(f'重构图像', fontsize=11)
+            axes[1, i].set_title(f'重构图像 #{i+1}\nMSE: {mse[i]:.4f}', 
+                                 fontsize=11, fontweight='bold', pad=5)
             axes[1, i].axis('off')
+            
+            diff = np.abs(original[i] - reconstructed[i])
+            im = axes[2, i].imshow(diff, cmap='hot', vmin=0, vmax=1)
+            axes[2, i].set_title(f'差异热力图 #{i+1}', fontsize=11, fontweight='bold', pad=5)
+            axes[2, i].axis('off')
         
-        plt.suptitle(f'VAE重构效果对比 (数字{target_digit})', fontsize=14, fontweight='bold')
         plt.tight_layout()
         plt.savefig(f'results/images/reconstruction_digit_{target_digit}.png', 
-                    dpi=300, bbox_inches='tight')
+                    dpi=300, bbox_inches='tight', facecolor='white')
         plt.show()
-        print(f"重构对比图已保存至 results/images/reconstruction_digit_{target_digit}.png")
+        print(f"✓ 重构对比图已保存至 results/images/reconstruction_digit_{target_digit}.png")
 
-def generate_samples(model, device, latent_dim=20, num_samples=10):
-    """从潜在空间随机采样生成新图像"""
+def generate_samples(model, device, latent_dim=20, num_samples=16):
+    """随机采样生成"""
     print("\n从潜在空间随机采样生成新图像...")
     
     model.eval()
     with torch.no_grad():
-        # 从标准正态分布采样
+        # 从标准正态分布采样（4x4网格）
         z = torch.randn(num_samples, latent_dim).to(device)
         
         # 生成图像
         generated = model.decode(z)
         generated_images = generated.view(-1, 28, 28).cpu().numpy()
         
-        # 可视化
-        fig, axes = plt.subplots(2, 5, figsize=(12, 6))
+        # 可视化（4x4网格）
+        fig, axes = plt.subplots(4, 4, figsize=(12, 12))
+        fig.suptitle('从潜在空间随机采样生成的数字0图像', 
+                     fontsize=16, fontweight='bold', y=0.98)
+        
         axes = axes.flatten()
         for i in range(num_samples):
             axes[i].imshow(generated_images[i], cmap='gray')
-            axes[i].set_title(f'生成样本 {i+1}', fontsize=11)
             axes[i].axis('off')
+            # 添加样本编号
+            axes[i].text(0.5, -0.15, f'样本 {i+1}', 
+                         transform=axes[i].transAxes, 
+                         fontsize=10, fontweight='bold', 
+                         ha='center', va='top')
         
-        plt.suptitle('从潜在空间随机采样生成的数字0图像', fontsize=14, fontweight='bold')
         plt.tight_layout()
-        plt.savefig('results/images/generated_samples_basic.png', dpi=300, bbox_inches='tight')
+        plt.savefig('results/images/generated_samples_basic.png', 
+                    dpi=300, bbox_inches='tight', facecolor='white')
         plt.show()
-        print("生成图像已保存至 results/images/generated_samples_basic.png")
+        print("✓ 生成图像已保存至 results/images/generated_samples_basic.png")
 
-def generate_conditional_samples(cvae_model, device, num_samples_per_digit=5):
-    """使用条件VAE生成指定数字的图像"""
+def generate_conditional_samples(cvae_model, device, num_samples_per_digit=6):
+    """条件生成展示"""
     print("\n使用条件VAE生成0-9数字图像...")
     
     cvae_model.eval()
-    fig, axes = plt.subplots(10, num_samples_per_digit, figsize=(12, 20))
+    # 调整布局：10行数字，每行6个样本
+    fig, axes = plt.subplots(10, num_samples_per_digit, figsize=(14, 18))
+    fig.suptitle('条件VAE生成的0-9数字图像', 
+                 fontsize=18, fontweight='bold', y=0.98)
     
     with torch.no_grad():
         for digit in range(10):
@@ -138,48 +174,49 @@ def generate_conditional_samples(cvae_model, device, num_samples_per_digit=5):
             
             # 可视化
             for i in range(num_samples_per_digit):
-                axes[digit, i].imshow(generated_images[i].cpu().squeeze(), cmap='gray')
+                img = generated_images[i].cpu().squeeze()
+                axes[digit, i].imshow(img, cmap='gray')
                 axes[digit, i].axis('off')
+                
+                # 只在每行第一个图像添加标签
                 if i == 0:
-                    axes[digit, i].set_ylabel(f'数字 {digit}', fontsize=12, rotation=0, labelpad=30)
+                    axes[digit, i].text(-0.2, 0.5, f'数字 {digit}', 
+                                        transform=axes[digit, i].transAxes,
+                                        fontsize=12, fontweight='bold',
+                                        ha='right', va='center')
+        
+        # 添加整体说明
+        fig.text(0.5, 0.02, '每个数字从独立采样潜在变量生成', 
+                 ha='center', fontsize=12, fontweight='bold', style='italic')
     
-    plt.suptitle('条件VAE生成的0-9数字图像', fontsize=16, fontweight='bold')
     plt.tight_layout()
-    plt.savefig('results/images/generated_samples_cvae.png', dpi=300, bbox_inches='tight')
+    plt.savefig('results/images/generated_samples_cvae.png', 
+                dpi=300, bbox_inches='tight', facecolor='white')
     plt.show()
-    print("条件生成图像已保存至 results/images/generated_samples_cvae.png")
+    print("✓ 条件生成图像已保存至 results/images/generated_samples_cvae.png")
 
 def main():
-    """主评估函数"""
-    # 设置设备
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
-    # 创建结果目录
     os.makedirs('results/images', exist_ok=True)
     
-    # 绘制损失曲线
     plot_training_curves()
     
-    # 加载并评估基础VAE模型
     print("\n加载基础VAE模型...")
     vae_basic = VAEBasic(latent_dim=20).to(device)
-    vae_basic.load_state_dict(torch.load('results/vae_basic_model.pth', map_location=device))
+    vae_basic.load_state_dict(torch.load('results/vae_basic_model.pth', map_location=device, weights_only=True))
     vae_basic.eval()
     
-    # 评估重构能力
-    evaluate_reconstruction(vae_basic, device, target_digit=0, num_samples=5)
+    evaluate_reconstruction(vae_basic, device, target_digit=0, num_samples=6)
     
-    # 随机采样生成
-    generate_samples(vae_basic, device, latent_dim=20, num_samples=10)
+    generate_samples(vae_basic, device, latent_dim=20, num_samples=16)
     
-    # 加载并评估条件VAE模型
     print("\n加载条件VAE模型...")
     cvae_model = CVAEAdvanced(latent_dim=20).to(device)
-    cvae_model.load_state_dict(torch.load('results/cvae_advanced_model.pth', map_location=device))
+    cvae_model.load_state_dict(torch.load('results/cvae_advanced_model.pth', map_location=device, weights_only=True))
     cvae_model.eval()
     
-    # 条件生成
-    generate_conditional_samples(cvae_model, device, num_samples_per_digit=5)
+    generate_conditional_samples(cvae_model, device, num_samples_per_digit=6)
     
     print("\n所有评估完成！请检查 results/images/ 目录中的结果。")
 
