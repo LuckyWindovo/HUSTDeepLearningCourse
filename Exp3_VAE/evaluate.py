@@ -67,57 +67,63 @@ def plot_training_curves():
     print("✓ 损失曲线已保存至 results/images/training_curves.png")
 
 def evaluate_reconstruction(model, device, target_digit=0, num_samples=6):
-    print(f"\n评估数字{target_digit}的重构能力...")
-    
-    # 加载测试数据
+    print(f"\n评估数字{target_digit}的重构能力（训练集 + 测试集）...")
+
     data_loader = MNISTDataLoader(
-        data_dir='./data', 
-        batch_size=num_samples, 
+        data_dir='./data',
+        batch_size=num_samples,
         target_digit=target_digit
     )
-    test_loader = data_loader.load_data(train=False)
-    
+
+    split_loaders = {
+        'train': data_loader.load_data(train=True),
+        'test': data_loader.load_data(train=False)
+    }
+
     model.eval()
     with torch.no_grad():
-        # 获取测试样本
-        test_data, _ = next(iter(test_loader))
-        test_data = test_data.to(device)
-        
-        # 重构
-        recon, _, _ = model(test_data)
-        
-        # 转换为图像格式
-        original = test_data.view(-1, 28, 28).cpu().numpy()
-        reconstructed = recon.view(-1, 28, 28).cpu().numpy()
-        
-        # 计算MSE（用于显示）
-        mse = np.mean((original - reconstructed) ** 2, axis=(1, 2))
-        
-        # 可视化对比
-        fig, axes = plt.subplots(3, num_samples, figsize=(16, 10))
-        fig.suptitle(f'VAE重构效果深度分析 (数字{target_digit})', 
-                     fontsize=16, fontweight='bold', y=0.98)
-        
-        for i in range(num_samples):
-            axes[0, i].imshow(original[i], cmap='gray')
-            axes[0, i].set_title(f'原始图像 #{i+1}', fontsize=11, fontweight='bold', pad=5)
-            axes[0, i].axis('off')
-            
-            axes[1, i].imshow(reconstructed[i], cmap='gray')
-            axes[1, i].set_title(f'重构图像 #{i+1}\nMSE: {mse[i]:.4f}', 
-                                 fontsize=11, fontweight='bold', pad=5)
-            axes[1, i].axis('off')
-            
-            diff = np.abs(original[i] - reconstructed[i])
-            im = axes[2, i].imshow(diff, cmap='hot', vmin=0, vmax=1)
-            axes[2, i].set_title(f'差异热力图 #{i+1}', fontsize=11, fontweight='bold', pad=5)
-            axes[2, i].axis('off')
-        
-        plt.tight_layout()
-        plt.savefig(f'results/images/reconstruction_digit_{target_digit}.png', 
-                    dpi=300, bbox_inches='tight', facecolor='white')
-        plt.show()
-        print(f"✓ 重构对比图已保存至 results/images/reconstruction_digit_{target_digit}.png")
+        for split_name, loader in split_loaders.items():
+            data_batch, _ = next(iter(loader))
+            data_batch = data_batch.to(device)
+
+            recon, _, _ = model(data_batch)
+
+            original = data_batch.view(-1, 28, 28).cpu().numpy()
+            reconstructed = recon.view(-1, 28, 28).cpu().numpy()
+            mse = np.mean((original - reconstructed) ** 2, axis=(1, 2))
+
+            fig, axes = plt.subplots(3, num_samples, figsize=(16, 10))
+            fig.suptitle(
+                f'VAE重构效果深度分析 (数字{target_digit} | {"训练集" if split_name == "train" else "测试集"})',
+                fontsize=16,
+                fontweight='bold',
+                y=0.98
+            )
+
+            for i in range(num_samples):
+                axes[0, i].imshow(original[i], cmap='gray')
+                axes[0, i].set_title(f'原始图像 #{i+1}', fontsize=11, fontweight='bold', pad=5)
+                axes[0, i].axis('off')
+
+                axes[1, i].imshow(reconstructed[i], cmap='gray')
+                axes[1, i].set_title(
+                    f'重构图像 #{i+1}\nMSE: {mse[i]:.4f}',
+                    fontsize=11,
+                    fontweight='bold',
+                    pad=5
+                )
+                axes[1, i].axis('off')
+
+                diff = np.abs(original[i] - reconstructed[i])
+                axes[2, i].imshow(diff, cmap='hot', vmin=0, vmax=1)
+                axes[2, i].set_title(f'差异热力图 #{i+1}', fontsize=11, fontweight='bold', pad=5)
+                axes[2, i].axis('off')
+
+            plt.tight_layout()
+            save_path = f'results/images/reconstruction_digit_{target_digit}_{split_name}.png'
+            plt.savefig(save_path, dpi=300, bbox_inches='tight', facecolor='white')
+            plt.show()
+            print(f"✓ {split_name.upper()} 重构对比图已保存至 {save_path}")
 
 def generate_samples(model, device, latent_dim=20, num_samples=16):
     """随机采样生成"""
