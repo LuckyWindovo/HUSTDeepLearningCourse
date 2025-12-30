@@ -9,7 +9,7 @@ class VAEBasic(nn.Module):
         self.latent_dim = latent_dim
         self.input_dim = input_dim
         
-        # 编码器：将输入映射到潜在空间的均值和对数方差
+        # 编码器：将784维输入映射到潜在空间
         self.encoder = nn.Sequential(
             nn.Linear(input_dim, 512),
             nn.ReLU(),
@@ -18,10 +18,10 @@ class VAEBasic(nn.Module):
             nn.Linear(256, 128),
             nn.ReLU()
         )
-        self.fc_mu = nn.Linear(128, latent_dim)      # 潜在变量的均值向量
-        self.fc_logvar = nn.Linear(128, latent_dim)  # 潜在变量的对数方差向量
+        self.fc_mu = nn.Linear(128, latent_dim)      # 均值
+        self.fc_logvar = nn.Linear(128, latent_dim)  # 对数方差
         
-        # 解码器：从潜在空间重建输入
+        # 解码器：从潜在空间重建图像
         self.decoder = nn.Sequential(
             nn.Linear(latent_dim, 128),
             nn.ReLU(),
@@ -42,8 +42,8 @@ class VAEBasic(nn.Module):
     
     def reparameterize(self, mu, logvar):
         """重参数化技巧：从N(mu, var)中采样，同时保持梯度可传递"""
-        std = torch.exp(0.5 * logvar)  # 计算标准差
-        eps = torch.randn_like(std)    # 从标准正态分布采样
+        std = torch.exp(0.5 * logvar)  
+        eps = torch.randn_like(std)    
         return mu + eps * std
     
     def decode(self, z):
@@ -58,23 +58,13 @@ class VAEBasic(nn.Module):
         return recon, mu, logvar
     
     def loss_function(self, recon_x, x, mu, logvar, beta=1.0):
-        """
-        VAE损失函数：重构损失 + KL散度
-        
-        参数:
-            recon_x: 重建的图像
-            x: 原始输入图像
-            mu: 潜在变量的均值
-            logvar: 潜在变量的对数方差
-            beta: KL散度的权重系数
-        """
-        # 重构损失：使用BCE损失
+        """VAE损失函数：重构损失 + KL散度"""
+        # 重构损失（二值交叉熵）
         recon_loss = F.binary_cross_entropy(recon_x, x, reduction='sum')
         
-        # KL散度：衡量潜在分布与标准正态分布的差异
+        # KL散度：q(z|x)与p(z)的散度
         kl_loss = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
         
-        # 总损失
         total_loss = recon_loss + beta * kl_loss
         
         return total_loss, recon_loss, kl_loss
