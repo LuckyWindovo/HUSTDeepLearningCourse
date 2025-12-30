@@ -16,4 +16,7 @@ Exp2_CIFAR10/data/
 Exp2_CIFAR10/results/
 Exp2_CIFAR10/models/
 Exp2_CIFAR10/logs/
+
+Exp3_VAE/data/
+Exp3_VAE/results/
 *.pdf
