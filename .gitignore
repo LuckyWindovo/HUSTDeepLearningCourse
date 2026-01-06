@@ -20,3 +20,5 @@ Exp2_CIFAR10/logs/
 Exp3_VAE/data/
 Exp3_VAE/results/
 *.pdf
+
+Exp4_DQN_CartPole/artifacts/
